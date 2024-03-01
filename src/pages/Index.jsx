@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { Box, Container, Heading, Text, Button, VStack, HStack, Progress, useToast } from "@chakra-ui/react";
+import React, { useState, useEffect } from "react";
+import { Container, Heading, Text, Button, VStack, HStack, Progress, useToast } from "@chakra-ui/react";
 import { FaPlay, FaPause, FaRedoAlt } from "react-icons/fa";
 
 const Index = () => {
@@ -7,9 +7,21 @@ const Index = () => {
   const [progress, setProgress] = useState(0);
   const toast = useToast();
 
+  let worker = null;
+
+  useEffect(() => {
+    // Cleanup function to terminate the worker when the component unmounts
+    return () => {
+      if (worker) {
+        worker.terminate();
+      }
+    };
+  }, []);
+
   const handleStart = () => {
     setIsCalculating(true);
-    // TODO: Implement Mersenne prime calculation logic
+    worker = new Worker(new URL("../workers/calculateMersenne.js", import.meta.url));
+    worker.postMessage("start");
     toast({
       title: "Calculation started.",
       description: "We've begun searching for Mersenne primes.",
@@ -21,7 +33,8 @@ const Index = () => {
 
   const handlePause = () => {
     setIsCalculating(false);
-    // TODO: Pause Mersenne prime calculation logic
+    worker.terminate();
+    worker = undefined;
     toast({
       title: "Calculation paused.",
       description: "Mersenne prime search has been paused.",
@@ -34,7 +47,10 @@ const Index = () => {
   const handleReset = () => {
     setIsCalculating(false);
     setProgress(0);
-    // TODO: Reset Mersenne prime calculation logic
+    if (worker) {
+      worker.terminate();
+    }
+    worker = undefined;
     toast({
       title: "Calculation reset.",
       description: "The search for Mersenne primes has been reset.",
